@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, of, take } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -57,7 +57,7 @@ export class MembersService {
     params = params.append('gender', userParams.gender);
     params = params.append('orderBy', userParams.orderBy);
 
-    return this.getPaginatedResults<Member[]>(this.baseUrl + 'users', params).pipe(
+    return this.getPaginatedResult<Member[]>(this.baseUrl + 'users', params).pipe(
       map(response => {
         this.memberCache.set(Object.values(userParams).join('-'), response);
         return response;
@@ -69,9 +69,9 @@ export class MembersService {
     const member = [...this.memberCache.values()]
       .reduce((arr, elem) => arr.concat(elem.result), [])
       .find((member: Member) => member.userName === username);
-    
+
     if (member) return of(member);
-    
+
     return this.http.get<Member>(this.baseUrl + 'users/' + username);
   }
 
@@ -92,7 +92,7 @@ export class MembersService {
     return this.http.delete(this.baseUrl + 'users/delete-photo/' + photoId);
   }
 
-  private getPaginatedResults<T>(url: string, params: HttpParams) {
+  private getPaginatedResult<T>(url: string, params: HttpParams) {
     const paginatedResult: PaginatedResult<T> = new PaginatedResult<T>;
     return this.http.get<T>(url, { observe: 'response', params }).pipe(
       map(response => {
@@ -103,7 +103,6 @@ export class MembersService {
         if (pagination) {
           paginatedResult.pagination = JSON.parse(pagination);
         }
-
         return paginatedResult;
       })
     );
@@ -111,8 +110,10 @@ export class MembersService {
 
   private getPaginationHeaders(pageNumber: number, pageSize: number) {
     let params = new HttpParams();
+
     params = params.append('pageNumber', pageNumber);
     params = params.append('pageSize', pageSize);
+
     return params;
   }
 }
